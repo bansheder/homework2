@@ -22,38 +22,50 @@
         <div class="messages-container">
             <h2>Сообщения</h2>
             <?php
-            $filename = "data.txt";
+$filename = "data.txt";
 
-            if ($_SERVER["REQUEST_METHOD"] == "POST") {
-                $name = trim($_POST["name"]);
-                $email = trim($_POST["email"]);
-                $message = trim($_POST["message"]);
-            
-                if (!empty($name) && !empty($email) && !empty($message)) {
-                    $dateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
-                    $formatDateTime = $dateTime->format('Y-m-d H:i:s');
-                    $message = nl2br(htmlspecialchars($message));
-                    $entry = "$name|$email|$formatDateTime|$message\n";
-                    file_put_contents($filename, $entry, FILE_APPEND | LOCK_EX);
-                }
-            }
-            if (file_exists($filename)) {
-                $entries = array_reverse(file($filename));
-                foreach ($entries as $entry) {
-                    list($name, $email, $dateTime, $message) = explode("|", $entry);
-                    echo "
-                        <div class='message-container'>
-                            <div>
-                                <strong>$name</strong> <em>$email</em>
-                            </div>
-                            <div>$message</div>
-                            <em>$dateTime</em>
-                        </div>
-                        <hr>";
-                }
-            }
-            ?>
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = trim($_POST["name"]);
+    $email = trim($_POST["email"]);
+    $message = trim($_POST["message"]);
+
+    if (!empty($name) && !empty($email) && !empty($message)) {
+        $dateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
+        $formatDateTime = $dateTime->format('Y-m-d H:i:s');
+        $message = htmlspecialchars($message); 
+        $message = str_replace("\n", "[NEWLINE]", $message); 
+        $entry = implode("~~~", [$name, $email, $formatDateTime, $message]) . "\n";
+
+        file_put_contents($filename, $entry, FILE_APPEND | LOCK_EX);
+    }
+}
+
+if (file_exists($filename)) {
+    $entries = array_reverse(file($filename));
+    foreach ($entries as $entry) {
+        $fields = explode("~~~", $entry);
+        if (count($fields) === 4) {
+            list($name, $email, $dateTime, $message) = $fields;
+            $message = str_replace("[NEWLINE]", "\n", $message);
+            $message = nl2br($message); 
+
+            echo "
+                <div class='message-container'>
+                    <div>
+                        <strong>$name</strong> <em>$email</em>
+                    </div>
+                    <div>$message</div>
+                    <em>$dateTime</em>
+                </div>
+                <hr>";
+        }
+    }
+}
+?>
+
+
         </div>
     </div>
 </body>
 </html>
+
